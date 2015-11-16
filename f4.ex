@@ -1,25 +1,44 @@
 defmodule Hack do
-  def new,       do: new(IO.gets "Available words? ")
-  def new(words) do
+  def new         do
+    words = IO.gets "Available words? "
+    String.rstrip(words)
+    |> new
+  end
+  def new(words)  do
     find_best_candidate(words)
   end
 
   def find_best_candidate(words) do
-    words
+    map = words
     |> String.split
     |> List.to_string
     |> String.codepoints
-    |> count_chars(alphabet_map 0)
+    |> count_chars(alphabet_map)
+    scores = to_list(words)
+    |> Enum.map fn(x) -> score_word(x, map) end
+    keys = words
+    |> to_list
+    |> Enum.map &(String.to_atom(&1))
+    Enum.zip(keys, scores)
   end
 
+  def score_word(word, map),        do: word |> String.codepoints |> score_word(map, 0)
+  def score_word([h|t], map, acc),  do: score_word(t, map, acc + score_letter(h, map))
+  def score_word([], map, acc),     do: acc
+
+  def score_letter(letter, map),    do: Map.fetch(map, String.to_atom(letter)) |> score_letter
+  def score_letter({:ok, value}),   do: value
+  def score_letter({:error}),       do: 0
+
   def to_list(string), do: String.split(string, [" ", ","], trim: true)
-  def alphabet_map(value) do
+  def alphabet_map(value \\ 0) do
     Enum.into ?a..?z, %{}, &{String.to_atom(<<&1>>), value}
   end
 
-  def count_chars([], map),   do: map
+  def count_chars([], map), do: map
   def count_chars([h|t], map) do
-    count_chars(t, Map.update!(map, String.to_atom(h), &(&1 +1)))
+    map = Map.update!(map, String.to_atom(h), &(&1 +1))
+    count_chars(t, map)
   end
 end
 
