@@ -1,26 +1,12 @@
 defmodule Hack do
-  def new         do
-    words = IO.gets "Available words? "
-    String.rstrip(words)
-    |> new
-  end
-  def new(words)  do
-    find_best_candidate(words)
-  end
+  def new,        do: new IO.gets "Available words? "
+  def new(words), do: words |> String.rstrip |> score_words
 
-  def find_best_candidate(words) do
-    map = words
-    |> String.split
-    |> List.to_string
-    |> String.codepoints
-    |> count_chars(alphabet_map)
-    scores = to_list(words)
-    |> Enum.map fn(x) -> score_word(x, map) end
-    keys = words
-    |> to_list
-    |> Enum.map &(String.to_atom(&1))
-    Enum.zip(keys, scores)
-  end
+  def score_words(""),    do: :error
+  def score_words(words), do: Enum.zip(word_score_keys(words), word_score_values(words)) |> to_map
+
+  def word_score_keys(words),       do: words |> to_list |> Enum.map &(String.to_atom(&1))
+  def word_score_values(words),     do: words |> to_list |> Enum.map &(score_word(&1, count_chars(words)))
 
   def score_word(word, map),        do: word |> String.codepoints |> score_word(map, 0)
   def score_word([h|t], map, acc),  do: score_word(t, map, acc + score_letter(h, map))
@@ -31,11 +17,11 @@ defmodule Hack do
   def score_letter({:error}),       do: 0
 
   def to_list(string), do: String.split(string, [" ", ","], trim: true)
-  def alphabet_map(value \\ 0) do
-    Enum.into ?a..?z, %{}, &{String.to_atom(<<&1>>), value}
-  end
+  def to_map(kw_list), do: Enum.into(kw_list, %{})
+  def alphabet_map(value \\ 0),     do: Enum.into ?a..?z, %{}, &{String.to_atom(<<&1>>), value}
 
-  def count_chars([], map), do: map
+  def count_chars(s),         do: s |> String.replace(" ", "") |> String.codepoints |> count_chars(alphabet_map)
+  def count_chars([], map),   do: map
   def count_chars([h|t], map) do
     map = Map.update!(map, String.to_atom(h), &(&1 +1))
     count_chars(t, map)
