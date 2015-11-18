@@ -24,7 +24,7 @@ defmodule Hack do
 
   def score_word(word, map),        do: word |> String.codepoints |> score_word(map, 0)
   def score_word([h|t], map, acc),  do: score_word(t, map, acc + score_letter(h, map))
-  def score_word([], map, acc),     do: acc
+  def score_word([], _map, acc),    do: acc
 
   def score_letter(letter, map),    do: Map.fetch(map, String.to_atom(letter)) |> score_letter
   def score_letter({:ok, value}),   do: value
